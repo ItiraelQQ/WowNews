@@ -1,0 +1,51 @@
+﻿@model WowNewsAPI.Models.News
+
+<h2>Удаление новости</h2>
+
+<div>
+    <h3>Вы уверены, что хотите удалить эту новость?</h3>
+    <div><strong>Заголовок:</strong> @Model.Title</div>
+    <div><strong>Контент:</strong> @Model.Content</div>
+    <div><strong>Дата создания:</strong> @Model.CreatedAt.ToShortDateString()</div>
+</div>
+
+<button onclick="handleDeleteNews(@Model.Id)" class="btn btn-danger">Удалить</button>
+<a asp-action="Index" class="btn btn-secondary">Отмена</a>
+
+<script>
+    // Функция для обработки удаления новости
+    async function handleDeleteNews(newsId) {
+        if (!confirm("Вы уверены, что хотите удалить эту новость?")) {
+            return;
+        }
+
+        const token = localStorage.getItem('jwtToken');
+
+        if (!token) {
+            alert("Пожалуйста, войдите в систему для удаления новости.");
+            return;
+        }
+
+        try {
+            // Отправка DELETE-запроса на сервер
+            const response = await fetch(`https://localhost:44366/api/news/${newsId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`, // Токен авторизации
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                alert("Новость успешно удалена!");
+                window.location.href = '/AdminNews/Index'; // Перенаправляем после успешного удаления
+            } else {
+                const errorMessage = await response.text();
+                alert(`Ошибка при удалении новости: ${errorMessage}`);
+            }
+        } catch (error) {
+            console.error("Ошибка при удалении новости:", error);
+            alert("Произошла ошибка при удалении новости.");
+        }
+    }
+</script>

@@ -1,0 +1,65 @@
+﻿@model WowNewsAPI.Models.News
+
+<h2>Редактировать новость</h2>
+
+<form id="editNewsForm" method="post">
+    <div class="form-group">
+        <label asp-for="Title"></label>
+        <input id="Title" asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Content"></label>
+        <textarea id="Content" asp-for="Content" class="form-control"></textarea>
+        <span asp-validation-for="Content" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="ImageUrl">URL изображения</label>
+        <input id="ImageUrl" asp-for="ImageUrl" class="form-control" />
+        <span asp-validation-for="ImageUrl" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+    <a asp-action="Index" class="btn btn-secondary">Отмена</a>
+</form>
+
+<script>
+    document.getElementById("editNewsForm").addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const newsData = {
+            Id: @Model.Id,
+            Title: document.getElementById("Title").value,
+            Content: document.getElementById("Content").value,
+            ImageUrl: document.getElementById("ImageUrl").value || null
+        };
+
+        const token = localStorage.getItem('jwtToken');
+
+        if (!token) {
+            alert("Пожалуйста, войдите в систему для редактирования новости.");
+            return;
+        }
+
+        try {
+            const response = await fetch(`https://localhost:44366/api/news/${newsData.Id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(newsData)
+            });
+
+            if (response.ok) {
+                alert("Новость успешно обновлена!");
+                window.location.href = '/AdminNews/Index';
+            } else {
+                const errorMessage = await response.text();
+                alert(`Ошибка редактирования новости: ${errorMessage}`);
+            }
+        } catch (error) {
+            console.error("Ошибка при обновлении новости:", error);
+            alert("Произошла ошибка при обновлении новости.");
+        }
+    });
+</script>

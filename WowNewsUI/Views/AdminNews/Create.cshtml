@@ -1,0 +1,114 @@
+﻿@model WowNewsAPI.Models.News
+
+<h2>Добавить новость</h2>
+<script src="https://cdn.ckeditor.com/ckeditor5/36.0.1/classic/ckeditor.js"></script>
+<script type="text/javascript" src="https://wow.zamimg.com/widgets/power.js"></script>
+<link rel="stylesheet" type="text/css" href="https://wow.zamimg.com/widgets/power.css">
+
+<form id="addNewsForm" asp-action="Create" method="post">
+    <div class="form-group">
+        <label asp-for="Title"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Content"></label>
+        <!-- Подключаем CKEditor -->
+        <textarea id="Content" name="Content" class="form-control"></textarea>
+        <span asp-validation-for="Content" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="ImageUrl">URL изображения</label>
+        <input asp-for="ImageUrl" class="form-control" />
+        <span asp-validation-for="ImageUrl" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Category">Категория</label>
+        <select id="Category" name="Category" class="form-control">
+            <option value="Retail">Retail</option>
+            <option value="ClassicProgressive">Classic Progressive</option>
+            <option value="Vanilla">Vanilla</option>
+        </select>
+        <span asp-validation-for="Category" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+    <a asp-action="Index" class="btn btn-secondary">Отмена</a>
+</form>
+
+
+<script>
+    async function handleAddNews(event) {
+        event.preventDefault(); // Предотвращаем стандартное отправление формы
+
+        const title = document.getElementById("Title").value;
+        const content = document.getElementById("Content").value;
+        const imageUrl = document.getElementById("ImageUrl").value;
+        const category = document.getElementById("Category").value;
+
+        let categoryValue;
+        switch (category) {
+            case "Retail":
+                categoryValue = 0;
+                break;
+            case "ClassicProgressive":
+                categoryValue = 1;
+                break;
+            case "Vanilla":
+                categoryValue = 2;
+                break;
+            default:
+                categoryValue = 0; // Если категория не найдена
+        }
+
+        const newsData = {
+            Title: title,
+            Content: content,
+            ImageUrl: imageUrl || null,
+            Category: categoryValue,
+        };
+
+        const token = localStorage.getItem('jwtToken');
+
+        if (!token) {
+            alert("Пожалуйста, войдите в систему для добавления новости.");
+            return;
+        }
+
+        try {
+            const response = await fetch('https://localhost:44366/api/news', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(newsData),
+            });
+
+            if (response.ok) {
+                alert("Новость успешно добавлена!");
+                window.location.href = '/AdminNews/Index';
+            } else {
+                const errorMessage = await response.text();
+                alert(`Ошибка добавления новости: ${errorMessage}`);
+            }
+        } catch (error) {
+            console.error("Произошла ошибка при отправке данных:", error);
+            alert("Произошла ошибка при добавлении новости.");
+        }
+    }
+    ClassicEditor
+        .create(document.querySelector('#Content'))
+        .catch(error => {
+            console.error(error);
+        });
+
+    document.getElementById("addNewsForm").addEventListener("submit", handleAddNews);
+</script>
+
+<style>
+    .ck-editor__editable {
+        min-height: 400px;
+        max-height: 600px;
+    }
+</style>

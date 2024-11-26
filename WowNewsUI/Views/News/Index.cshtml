@@ -1,0 +1,222 @@
+﻿@model IEnumerable<WowNewsAPI.Models.News>
+@{
+    // Список доступных категорий
+    var categories = Enum.GetValues(typeof(WowNewsAPI.Models.NewsCategory))
+                          .Cast<WowNewsAPI.Models.NewsCategory>()
+                          .ToList();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Новости</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <nav>
+        <span id="userGreeting" class="nav-link text-light" style="display:none;" onclick="goToProfile()"></span>
+        <a id="logoutLink" class="nav-link text-light" href="javascript:void(0);" onclick="handleLogout()" style="display:none;">Выйти</a>
+        <a id="loginLink" class="nav-link text-light" href="javascript:void(0);" onclick="showLoginModal()">Логин</a>
+        <a id="registerLink" class="nav-link text-light" href="javascript:void(0);" onclick="showRegisterModal()">Регистрация</a>
+    </nav>
+
+    <!-- Модальное окно для логина -->
+    <div id="loginModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-btn" onclick="hideLoginModal()">&times;</span>
+            <h2>Логин</h2>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">Имя пользователя</label>
+                    <input type="text" id="username" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" class="form-control" required />
+                </div>
+                <button type="submit" class="btn btn-primary">Войти</button>
+                <p id="errorMessage" style="color:red; display:none;"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно для регистрации -->
+    <div id="registerModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-btn" onclick="hideRegisterModal()">&times;</span>
+            <h2>Регистрация</h2>
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="registerUsername">Имя пользователя</label>
+                    <input type="text" id="registerUsername" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Пароль</label>
+                    <input type="password" id="registerPassword" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Подтверждение пароля</label>
+                    <input type="password" id="confirmPassword" class="form-control" required />
+                </div>
+                <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+                <p id="registerErrorMessage" style="color:red; display:none;"></p>
+            </form>
+        </div>
+    </div>
+
+    <div class="category-filter">
+        <form method="get" action="@Url.Action("Index", "News")">
+            <label for="category">Выберите категорию</label>
+            <select id="category" name="category" class="form-control">
+                <!option value="" @(string.IsNullOrEmpty(ViewBag.SelectedCategory) ? "selected" : "")>Все</!option>
+                @foreach (var category in categories)
+                {
+                    <!option value="@category" @(ViewBag.SelectedCategory == category.ToString() ? "selected" : "")>
+                        @category
+                    </!option>
+                }
+            </select>
+            <button type="submit" class="btn btn-primary">Фильтровать</button>
+        </form>
+    </div>
+
+    <div class="news-container">
+        <h1>Новости</h1>
+        <ul class="news-list">
+            @foreach (var newsItem in Model)
+            {
+                var categoryName = Enum.GetName(typeof(WowNewsAPI.Models.NewsCategory), newsItem.Category) ?? "Неизвестная категория";
+
+                <li class="news-card">
+                    <img src="@newsItem.ImageUrl" alt="Изображение новости" class="news-image" />
+                    <div class="news-content">
+                        <h2>@newsItem.Title</h2>
+                        <!-- Отображаем только первый абзац -->
+                        <p class="news-date">@newsItem.CreatedAt</p>
+                        <p class="news-category"><strong>Категория:</strong> @categoryName</p>
+                        <a href="@Url.Action("Details", "News", new { id = newsItem.Id })" class="read-more-btn">Читать далее</a>
+                    </div>
+                </li>
+            }
+        </ul>
+    </div>
+
+    <script>
+        // Показываем модальное окно логина
+        function showLoginModal() { 
+            document.getElementById("loginModal").style.display = "block"; 
+        }
+
+        // Скрываем модальное окно логина
+        function hideLoginModal() { 
+            document.getElementById("loginModal").style.display = "none"; 
+        }
+
+        // Показываем модальное окно регистрации
+        function showRegisterModal() { 
+            document.getElementById("registerModal").style.display = "block"; 
+        }
+
+        // Скрываем модальное окно регистрации
+        function hideRegisterModal() { 
+            document.getElementById("registerModal").style.display = "none"; 
+        }
+
+        function goToProfile() { window.location.href = "/Home/Profile"; }
+
+        async function handleLogin(event) {
+            event.preventDefault();  // Предотвращаем отправку формы по умолчанию
+
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            const response = await fetch('https://localhost:44366/api/account/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Username: username, Password: password }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('jwtToken', data.token);
+                updateUserInterface(username);
+                hideLoginModal();  // Закрываем модальное окно после успешного логина
+                window.location.reload();
+            } else {
+                showError("Неверное имя пользователя или пароль.");
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();  // Предотвращаем отправку формы по умолчанию
+
+            const username = document.getElementById("registerUsername").value;
+            const password = document.getElementById("registerPassword").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+
+            if (password !== confirmPassword) {
+                showError("Пароли не совпадают.", "registerErrorMessage");
+                return;
+            }
+
+            const response = await fetch('https://localhost:44366/api/account/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Username: username, Password: password }),
+            });
+
+            if (response.ok) {
+                hideRegisterModal();
+                showLoginModal();
+            } else {
+                const errorMessage = await response.text();
+                showError(`Ошибка регистрации: ${errorMessage}`, "registerErrorMessage");
+            }
+        }
+
+        async function handleLogout() {
+            localStorage.removeItem('jwtToken');
+            window.location.reload();
+        }
+
+        function updateUserInterface(username) {
+            document.getElementById("userGreeting").innerText = `Привет, ${username}`;
+            document.getElementById("userGreeting").style.display = "inline";
+            document.getElementById("logoutLink").style.display = "inline";
+            document.getElementById("loginLink").style.display = "none";
+            document.getElementById("registerLink").style.display = "none";
+        }
+
+        function showError(message, id = "errorMessage") {
+            const errorElem = document.getElementById(id);
+            errorElem.innerText = message;
+            errorElem.style.display = "block";
+        }
+
+        async function checkLoginStatus() {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) return;
+
+            try {
+                const response = await fetch('https://localhost:44366/api/account/check-login-status', {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    updateUserInterface(user.username);
+                } else {
+                    localStorage.removeItem('jwtToken');
+                }
+            } catch (error) {
+                console.error("Ошибка при проверке статуса логина", error);
+            }
+        }
+
+        checkLoginStatus();
+    </script>
+</body>
+</html>

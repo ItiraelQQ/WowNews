@@ -1,0 +1,414 @@
+﻿@using WowNewsAPI.Models
+@using System.Text.RegularExpressions
+
+@model News
+<script type="text/javascript" src="https://wow.zamimg.com/widgets/power.js"></script>
+<link rel="stylesheet" type="text/css" href="https://wow.zamimg.com/widgets/power.css">
+
+<div id="newsContainer">
+    <h1>@Model.Title</h1>
+    <div class="text-news">
+        @Html.Raw(Model.Content)
+    </div>
+</div>
+
+<hr>
+
+<!-- Секция комментариев -->
+<h2>Комментарии</h2>
+<div id="commentsContainer">
+    <!-- Здесь будут загружены комментарии -->
+</div>
+
+<!-- Форма для добавления комментария -->
+<h3>Оставить комментарий</h3>
+<textarea id="commentContent" placeholder="Введите ваш комментарий" rows="4"></textarea>
+<button id="commentButton">Отправить комментарий</button>
+
+<script>
+    const newsId = @Model.Id; // Получаем ID новости из модели
+
+    // Функция для загрузки комментариев
+    async function loadComments() {
+        const token = localStorage.getItem("jwtToken"); // Берем токен из localStorage
+        
+
+        try {
+            const response = await fetch(`https://localhost:44366/api/comments/${newsId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const comments = await response.json();
+                const commentsContainer = document.getElementById("commentsContainer");
+                commentsContainer.innerHTML = ''; // Очистить контейнер перед добавлением новых комментариев
+
+                comments.forEach(comment => {
+                    const commentElement = document.createElement("div");
+                    commentElement.classList.add("comment");
+                    commentElement.innerHTML = `
+                                <div style="display: flex; align-items: center;">
+                                    <img src="https://localhost:44366${comment.user.avatarUrl || '/default-avatar.png'}" alt="Avatar" />
+                                    <strong>${comment.user.userName || 'Аноним'}</strong>
+                                </div>
+                                <p>${comment.content}</p>
+                                <p><small>Дата публикации: ${new Date(comment.postedDate).toLocaleString()}</small></p>
+                            `;
+                    commentsContainer.appendChild(commentElement);
+                });
+            } else {
+                alert("Ошибка загрузки комментариев. Пожалуйста, попробуйте еще раз.");
+            }
+        } catch (error) {
+            console.error("Ошибка при загрузке комментариев:", error);
+            alert("Произошла ошибка при загрузке комментариев.");
+        }
+    }
+
+    // Функция для отправки нового комментария
+    async function postComment() {
+        const content = document.getElementById("commentContent").value.trim();
+
+        if (!content) {
+            alert("Пожалуйста, введите текст комментария.");
+            return;
+        }
+
+        if (!newsId) {  // Проверяем, что newsId не undefined или пустое
+            alert("Ошибка: не указан идентификатор новости.");
+            return;
+        }
+
+        const token = localStorage.getItem("jwtToken");
+        if (!token) {
+            alert("Пожалуйста, войдите в систему, чтобы оставить комментарий.");
+            return;
+        }
+
+        try {
+            const response = await fetch(`https://localhost:44366/api/Comments/${newsId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify( content )  // Отправляем контент в формате JSON
+            });
+
+            if (response.ok) {
+                alert("Комментарий успешно добавлен!");
+                document.getElementById("commentContent").value = ""; // Очищаем поле после отправки
+                loadComments(); // Обновляем список комментариев
+            } else {
+                const errorText = await response.text();
+                if (response.status === 401) {
+                    alert("Пожалуйста, войдите в систему, чтобы оставить комментарий.");
+                } else {
+                    alert(`Ошибка отправки комментария: ${errorText}`);
+                }
+            }
+        } catch (error) {
+            console.error("Ошибка при отправке комментария:", error);
+            alert("Произошла ошибка при отправке комментария.");
+        }
+    }
+    // Получаем все изображения на странице
+    const images = document.querySelectorAll('#newsContainer img');
+
+    // Получаем модальное окно и элементы внутри него
+    const modal = document.createElement('div');
+    modal.classList.add('modal');
+    document.body.appendChild(modal);
+
+    const modalContent = document.createElement('div');
+    modalContent.classList.add('modal-content');
+    modal.appendChild(modalContent);
+
+    const modalImage = document.createElement('img');
+    modalContent.appendChild(modalImage);
+
+    const closeButton = document.createElement('span');
+    closeButton.classList.add('close');
+    closeButton.innerHTML = '&times;';
+    modalContent.appendChild(closeButton);
+
+    // Открытие модального окна при клике на изображение
+    images.forEach(image => {
+        image.addEventListener('click', () => {
+            modal.style.display = 'flex'; // Показываем модальное окно
+            modalImage.src = image.src; // Устанавливаем изображение в модальном окне
+        });
+    });
+
+    // Закрытие модального окна при клике на кнопку закрытия
+    closeButton.addEventListener('click', () => {
+        modal.style.display = 'none'; // Прячем модальное окно
+    });
+
+    // Закрытие модального окна при клике вне изображения
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none'; // Прячем модальное окно
+        }
+    });
+
+    // Добавление обработчика для кнопки
+    document.getElementById("commentButton").addEventListener("click", postComment);
+
+    // Загружаем комментарии при загрузке страницы
+    document.addEventListener('DOMContentLoaded', loadComments);
+</script>
+
+<style>
+    /* Основные стили страницы */
+    body {
+        font-family: 'Morpheus', serif; /* Под WoW-стиль, используйте стандартный шрифт, если нет кастомного */
+        background-color: #121212; /* Темный фон */
+        color: #e0e0e0; /* Светлый текст */
+        margin: 0;
+        padding: 0;
+        display: block;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    /* Контейнер для новости */
+    #newsContainer {
+        background: #1e1e1e;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        margin-bottom: 30px;
+        width: 80%;
+        max-width: 800px;
+    }
+
+        #newsContainer h1 {
+            font-size: 30px;
+            color: #f39c12;
+            margin-bottom: 15px;
+        }
+
+    /* Стили для содержимого новости */
+    .text-news {
+        font-size: 16px;
+        color: #ccc;
+        line-height: 1.6;
+    }
+
+        .text-news blockquote {
+            font-size: 18px;
+            font-style: italic;
+            color: #bbb;
+            border-left: 4px solid #f39c12;
+            padding-left: 15px;
+            margin: 20px 0;
+        }
+
+    /* Стили для изображений в новости */
+    #newsContainer img {
+        max-width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        margin: 20px 0;
+    }
+
+    /* Разделитель */
+    hr {
+        border: 0;
+        height: 2px;
+        background: #333;
+        margin: 30px 0;
+    }
+
+    /* Стили для комментариев */
+    #commentsContainer {
+        background: #1e1e1e;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        margin-bottom: 30px;
+    }
+
+    .comment {
+        display: block;
+        flex-direction: column;
+        padding: 15px;
+        margin-bottom: 20px;
+        background: #2a2a2a;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+        .comment strong {
+            font-size: 16px;
+            color: #f39c12;
+            margin-bottom: 10px;
+        }
+
+        .comment p {
+            font-size: 14px;
+            color: #ddd;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .comment img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+    /* Стили для формы комментариев */
+    textarea {
+        width: 100%;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #555;
+        background: #2a2a2a;
+        color: #f5f5f5;
+        margin-bottom: 20px;
+        font-size: 16px;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        resize: none;
+    }
+
+        textarea:focus {
+            outline: none;
+            border-color: #f39c12;
+            box-shadow: 0 0 5px rgba(243, 156, 18, 0.5);
+        }
+
+    /* Стили для кнопки отправки комментария */
+    button {
+        display: inline-block;
+        background-color: #f39c12;
+        color: #2d2d2d;
+        border: none;
+        padding: 12px 20px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s;
+        font-weight: bold;
+    }
+
+        button:hover {
+            background-color: #e67e22;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+    /* Маленький текст (например, для даты публикации) */
+    small {
+        color: #bbb;
+    }
+
+    /* Стили для элементов в комментариях */
+    .comment {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+        .comment img {
+            margin-right: 15px;
+        }
+
+    /* Стиль для контейнера с ошибками */
+    .alert {
+        color: red;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    /* Стили для формы отправки комментария */
+    #commentContent {
+        background-color: #2a2a2a;
+        color: #f5f5f5;
+        border-radius: 8px;
+        padding: 10px;
+        border: 1px solid #555;
+        font-size: 16px;
+        resize: none;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    /* Стили для текста комментария */
+    .comment p {
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    /* Стили для элементов в комментариях */
+    .comment strong {
+        font-size: 16px;
+        color: #f39c12;
+    }
+
+    #newsContainer img {
+        max-width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        margin: 20px 0;
+        cursor: zoom-in; /* Добавляем курсор лупы при наведении */
+    }
+    /* Стили для модального окна */
+    .modal {
+        display: none; /* Скрыто по умолчанию */
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .modal-content {
+        max-width: 90%;
+        max-height: 80%;
+        margin: auto;
+        background-color: black;
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+    .modal img {
+        width: 100%;
+        height: auto;
+        border-radius: 10px;
+    }
+
+    .close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: #f1f1f1;
+        font-size: 30px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+        .close:hover,
+        .close:focus {
+            color: #f39c12;
+            text-decoration: none;
+        }
+
+</style>
+
+

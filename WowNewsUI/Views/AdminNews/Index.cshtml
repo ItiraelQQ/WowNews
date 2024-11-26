@@ -1,0 +1,27 @@
+﻿@model IEnumerable<WowNewsAPI.Models.News>
+
+<h2>Управление новостями</h2>
+<a href="@Url.Action("Create", "AdminNews")" class="btn btn-primary">Добавить новость</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Заголовок</th>
+            <th>Дата создания</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var news in Model)
+        {
+            <tr>
+                <td>@news.Title</td>
+                <td>@news.CreatedAt.ToShortDateString()</td>
+                <td>
+                    <a href="@Url.Action("Edit", "AdminNews", new { id = news.Id })" class="btn btn-secondary">Редактировать</a>
+                    <a href="@Url.Action("Delete", "AdminNews", new { id = news.Id })" class="btn btn-danger">Удалить</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

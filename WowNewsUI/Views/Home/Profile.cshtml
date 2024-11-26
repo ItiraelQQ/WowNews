@@ -1,0 +1,181 @@
+﻿@{
+    ViewData["Title"] = "Профиль пользователя";
+}
+
+<h1>Профиль пользователя</h1>
+<div id="profileContainer">
+    <img id="profileAvatar" src="default-avatar.png" alt="Аватар" style="width: 100px; height: 100px; border-radius: 50%;" />
+    <p><strong>Имя пользователя:</strong> <span id="profileUsername"></span></p>
+</div>
+
+<h2>Загрузить аватарку</h2>
+<input type="file" id="avatarInput" accept="image/*" />
+<button onclick="uploadAvatar()">Загрузить</button>
+
+<script>
+    async function loadProfile() {
+        const token = localStorage.getItem("jwtToken"); // Заменили на localStorage для единообразия
+        if (!token) {
+            alert("Вы не авторизованы.");
+            window.location.href = "/Account/Login"; // Перенаправление на страницу логина, если не авторизован
+            return;
+        }
+
+        try {
+            const response = await fetch('https://localhost:44366/api/account/profile', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const profileData = await response.json();
+                document.getElementById("profileUsername").innerText = profileData.username;
+                document.getElementById("profileAvatar").src = profileData.avatarUrl
+                    ? `https://localhost:44366${profileData.avatarUrl}`
+                    : 'default-avatar.png';
+            } else {
+                alert("Ошибка загрузки профиля. Пожалуйста, попробуйте еще раз.");
+                window.location.href = "/Account/Login";
+            }
+        } catch (error) {
+            console.error("Ошибка при загрузке профиля:", error);
+            alert("Произошла ошибка при загрузке профиля.");
+        }
+    }
+
+    async function uploadAvatar() {
+        const input = document.getElementById("avatarInput");
+        if (input.files.length === 0) {
+            alert("Пожалуйста, выберите изображение.");
+            return;
+        }
+
+        const token = localStorage.getItem("jwtToken"); // Заменили на localStorage
+        if (!token) {
+            alert("Вы не авторизованы.");
+            window.location.href = "/Account/Login"; // Перенаправление на страницу логина, если не авторизован
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", input.files[0]);
+
+        try {
+            const response = await fetch('https://localhost:44366/api/account/upload-avatar', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                alert("Аватарка успешно загружена!");
+                loadProfile(); // Обновляем профиль, чтобы отобразить новую аватарку
+            } else {
+                const errorText = await response.text();
+                alert(`Ошибка загрузки аватарки: ${errorText}`);
+            }
+        } catch (error) {
+            console.error("Ошибка при загрузке аватарки:", error);
+            alert("Произошла ошибка при загрузке аватарки.");
+        }
+    }
+
+    // Загружаем профиль при загрузке страницы
+    document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+<style>
+    /* Общие стили для страницы профиля */
+    #profileContainer {
+        text-align: center;
+        background-color: #f4e6d2;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 400px;
+        margin: 20px auto;
+    }
+
+    /* Стили для аватарки */
+    #profileAvatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 10px;
+        border: 3px solid #ffd700;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Заголовок профиля */
+    h1 {
+        text-align: center;
+        font-size: 28px;
+        color: #4d2e00;
+        margin-bottom: 20px;
+    }
+
+    /* Заголовок секции загрузки аватарки */
+    h2 {
+        font-size: 20px;
+        color: #4d2e00;
+        text-align: center;
+        margin-top: 30px;
+    }
+
+    /* Стили для информации о пользователе */
+    #profileContainer p {
+        font-size: 16px;
+        color: #4d2e00;
+        margin-bottom: 10px;
+    }
+
+    /* Стили для кнопки загрузки */
+    button {
+        background-color: #ffd700;
+        color: #4d2e00;
+        border: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+        button:hover {
+            background-color: #ff4500;
+            color: #fff;
+        }
+
+    /* Стили для инпута файла */
+    input[type="file"] {
+        margin-top: 10px;
+        font-size: 16px;
+        padding: 5px;
+        align-items: center;
+    }
+
+    /* Выравнивание страницы */
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 0;
+        display: block;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    /* Стили для уведомлений (alert) */
+    .alert {
+        color: red;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+</style>

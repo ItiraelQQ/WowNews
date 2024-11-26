@@ -1,0 +1,190 @@
+/* Основные стили */
+body {
+    background: radial-gradient(circle, #1a1a1a 60%, #000000); /* Темный градиентный фон */
+    font-family: 'Morpheus', serif; /* Под WoW-стиль, используйте стандартный шрифт, если нет кастомного */
+    color: #f4e6d2; /* Светлый цвет текста */
+    margin: 0;
+    padding: 0;
+}
+
+/* Заголовок страницы */
+h1 {
+    text-align: center; /* Центрируем заголовок */
+    margin: 30px 0;
+    color: #ffdd44; /* Золотой цвет заголовка */
+    text-shadow: 2px 2px 5px #000; /* Тень для объема */
+    font-size: 2.5em;
+}
+
+/* Контейнер для новостей */
+.news-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto; /* Центрируем контейнер на странице */
+}
+
+/* Список новостей */
+.news-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.news-card {
+    display: flex;
+    /*background: url('/images/textures/parchment-textures.jpg') center/cover; */ /* Текстура пергамента */
+    border: 3px solid #8c4e0f; /* Граница в стиле WoW */
+    border-radius: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Тень */
+    transition: transform 0.3s, box-shadow 0.3s; /* Плавный переход */
+}
+
+    .news-card:hover {
+        transform: scale(1.02); /* Увеличение при наведении */
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.6); /* Усиление тени */
+    }
+
+.news-image {
+    width: 350px; /* Фиксированная ширина изображения */
+    height: 200px; /* Фиксированная высота изображения */
+    object-fit: cover; /* Это сохранит пропорции, при этом обрежет изображение, если оно не подходит по размеру */
+}
+
+
+.news-content {
+    padding: 20px;
+    flex-grow: 1;
+    color: #f4e6d2;
+}
+
+    .news-content h2 {
+        color: #ffdd44; /* Золотой цвет заголовков */
+        text-shadow: 1px 1px 4px #000;
+        margin: 0 0 10px 0;
+        font-size: 1.5em;
+    }
+
+    .news-content p {
+        margin: 0 0 10px 0;
+    }
+
+.news-category {
+    color: #c8a165; /* Цвет категории */
+    font-weight: bold;
+}
+
+.news-date {
+    color: #b0b0b0; /* Серый цвет даты */
+    font-size: 0.9em;
+}
+
+/* Кнопка "Читать далее" */
+.read-more-btn {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #FF4500; /* Однотонный цвет без градиента */
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+    .read-more-btn:hover {
+        background-color: #FF4500; /* Цвет при наведении */
+        color: white;
+    }
+
+
+
+/* Дополнительные элементы */
+.category-filter {
+    text-align: center;
+    margin: 15px 0;
+    color: #f4e6d2;
+}
+
+    .category-filter label {
+        font-weight: bold;
+        margin-right: 8px;
+        font-size: 14px;
+    }
+    .category-filter button {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 8px 12px;
+        background-color: #FF4500; /* Однотонный цвет без градиента */
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        text-decoration: none;
+    }
+        .category-filter button:hover {
+            background-color: #FF4500; /* Цвет при наведении */
+            color: white;
+        }
+
+.form-control {
+    background: #4d2e00;
+    color: #f4e6d2;
+    border: 1px solid #8c4e0f;
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: 14px; /* Уменьшаем размер шрифта для компактности */
+    width: 200px; /* Ограничиваем ширину для компактности */
+    display: inline-block; /* Для того чтобы они не занимали всю ширину */
+}
+
+    .form-control:focus {
+        outline: none;
+        border: 1px solid #ffd700;
+        box-shadow: 0 0 5px #ffd700;
+    }
+
+
+/* Модальное окно */
+.modal {
+    display: flex; /* Используем Flexbox для выравнивания */
+    justify-content: center; /* Выравнивание по горизонтали */
+    align-items: center; /* Выравнивание по вертикали */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8); /* Прозрачный черный фон */
+    z-index: 1000;
+}
+
+/* Контейнер модального окна */
+.modal-content {
+    background: #4d2e00;
+    padding: 20px;
+    border-radius: 10px;
+    color: #f4e6d2;
+    border: 2px solid #8c4e0f;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    width: 80%; /* Ширина окна */
+    max-width: 600px; /* Максимальная ширина окна */
+    position: relative; /* Для правильного позиционирования кнопки */
+}
+
+/* Кнопка закрытия */
+.close-btn {
+    color: #ffd700;
+    font-size: 20px;
+    cursor: pointer;
+    position: absolute; /* Позиционируем кнопку в правом верхнем углу */
+    top: 10px;
+    right: 10px;
+}
+
+    .close-btn:hover {
+        color: #ff4500;
+        text-shadow: 0 0 10px #ff4500;
+    }
+
+
